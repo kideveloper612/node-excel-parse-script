@@ -5,14 +5,21 @@ const Excel = require('exceljs');
 const workbook = new Excel.Workbook();
 
 function getCellResult(worksheet, cellLabel) {
-  if (worksheet.getCell(cellLabel).formula) {
-    return parser.parse(worksheet.getCell(cellLabel).formula);
-  } else {
-    return worksheet.getCell(cellCoord.label).value;
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(parser.parse(cellLabel));
+      if (worksheet.getCell(cellLabel).formula) {
+        resolve(parser.parse(worksheet.getCell(cellLabel).formula));
+      } else {
+        resolve(worksheet.getCell(cellCoord.label).value);
+      }
+    } catch {
+      reject('error');
+    }
+  });
 }
 
-workbook.xlsx.readFile('./easy.xlsx').then(() => {
+workbook.xlsx.readFile('./easy.xlsx').then(async () => {
   var worksheet = workbook.getWorksheet(1);
 
   parser.on('callCellValue', function(cellCoord, done) {
@@ -42,5 +49,6 @@ workbook.xlsx.readFile('./easy.xlsx').then(() => {
   });
 
   worksheet.getCell('A2').value = 100;
-  console.log(getCellResult(worksheet, 'B4'));
+  var result = await getCellResult(worksheet, 'A$1&" world"');
+  console.log(result);
 });
